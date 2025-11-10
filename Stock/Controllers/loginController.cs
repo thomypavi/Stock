@@ -27,9 +27,10 @@ namespace Stock.Controllers
             if (usuario != null)
             {
                 if (usuario.TipoUsuario == "Proveedor")
-                    return RedirectToAction("DashboardProveedor", "Dashboard");
+                    return RedirectToAction("Index", "Productos", new { idProveedor = usuario.Id });
                 else if (usuario.TipoUsuario == "Administrativo")
                     return RedirectToAction("DashboardAdministrativo", "Dashboard");
+
             }
 
             ViewData["ErrorMessage"] = "Usuario o contraseña incorrectos.";
