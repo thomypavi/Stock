@@ -1,0 +1,33 @@
+﻿@model List<Stock.Models.StockAdmin>
+
+<h2 class="text-primary fw-bold mb-4 text-center">🏢 Stock del Administrador</h2>
+
+@if (TempData["Ok"] != null)
+{
+    <div class="alert alert-success text-center">@TempData["Ok"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger text-center">@TempData["Error"]</div>
+}
+
+<table class="table table-striped table-hover text-center align-middle">
+    <thead class="table-primary">
+        <tr>
+            <th>Producto</th>
+            <th>Descripción</th>
+            <th>Cantidad actual</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var s in Model)
+        {
+            <tr>
+                <td>@s.NombreProducto</td>
+                <td>@s.Descripcion</td>
+                <td>@s.Cantidad</td>
+            </tr>
+        }
+    </tbody>
+</table>
+

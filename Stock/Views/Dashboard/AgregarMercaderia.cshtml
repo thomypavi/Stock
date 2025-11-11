@@ -1,0 +1,110 @@
+﻿@model List<Stock.Models.Producto>
+
+@{
+    ViewData["Title"] = "Agregar Mercadería";
+    var proveedores = ViewBag.Proveedores as List<Stock.Models.Usuario>;
+    var idSel = ViewBag.IdProveedorSeleccionado as int?;
+}
+
+<div class="container mt-5" style="max-width:1000px;">
+    <h2 class="text-center text-success fw-bold mb-4">➕ Agregar Mercadería</h2>
+
+    @if (TempData["Ok"] != null)
+    {
+        <div class="alert alert-success text-center">@TempData["Ok"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger text-center">@TempData["Error"]</div>
+    }
+
+    <!-- Selector de proveedor -->
+    <form method="get" asp-action="AgregarMercaderia" asp-controller="Dashboard" class="mb-4 text-center">
+        <label class="fw-semibold">Seleccionar proveedor:</label>
+        <select name="idProveedor" class="form-select d-inline-block w-auto mx-2" onchange="this.form.submit()">
+            <option value="">-- Elegir proveedor --</option>
+            @foreach (var p in proveedores)
+            {
+                <option value="@p.Id" selected="@(idSel == p.Id)">@p.Email</option>
+            }
+        </select>
+    </form>
+
+    @if (Model != null && Model.Count > 0)
+    {
+        <!-- IMPORTANTE: Postea a ConfirmarMercaderia -->
+        <form asp-action="ConfirmarMercaderia" asp-controller="Dashboard" method="post">
+            <table class="table table-striped table-hover text-center align-middle">
+                <thead class="table-success">
+                    <tr>
+                        <th>Producto</th>
+                        <th>Descripción</th>
+                        <th>📦 Stock del proveedor</th>
+                        <th>Agregar unidades</th>
+                        <th>Nuevo stock total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        <tr>
+                            <td>@Model[i].Nombre</td>
+                            <td>@Model[i].Descripcion</td>
+
+                           
+
+                            <!-- Stock del proveedor (solo visualizar) -->
+                            <td>
+                                <input type="hidden" name="Stock[@i].IdProducto" value="@Model[i].Id" />
+                                <input type="hidden" name="Stock[@i].CantidadActual" value="@Model[i].Cantidad" />
+                                <input type="number" value="@Model[i].Cantidad" class="form-control text-center" readonly />
+                            </td>
+
+
+                            <!-- Agregar unidades -->
+                            <td>
+                                <input type="number" name="Stock[@i].CantidadAgregar" value="0" min="0" class="form-control text-center" />
+                            </td>
+
+                            <!-- Nuevo stock total (admin) -->
+                            <td>
+                                <span id="nuevoStock_@Model[i].Id">@Model[i].StockAdmin</span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-success btn-lg">
+                    💾 Confirmar actualización
+                </button>
+            </div>
+        </form>
+    }
+    else if (idSel != null)
+    {
+        <div class="alert alert-warning text-center">
+            Este proveedor no tiene productos cargados.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info text-center">
+            Seleccioná un proveedor para ver sus productos.
+        </div>
+    }
+</div>
+
+<script>
+    // Calcula "Nuevo stock total" = StockAdmin + CantidadAgregar (en vivo)
+    document.querySelectorAll('input[name$="CantidadAgregar"]').forEach(input => {
+        input.addEventListener('input', e => {
+            const row = e.target.closest('tr');
+            const hiddenActual = row.querySelector('input[name$="CantidadActual"]').value;
+            const actual = parseInt(hiddenActual) || 0;
+            const agregar = parseInt(e.target.value) || 0;
+            row.querySelector('span[id^="nuevoStock_"]').textContent = actual + agregar;
+        });
+    });
+</script>

@@ -1,6 +1,71 @@
 ﻿@{
     ViewData["Title"] = "Dashboard Administrativo";
+    var productos = ViewBag.Productos as List<Stock.Models.Producto>;
 }
 
-<h2>Bienvenido, Administrativo</h2>
-<p>Este es tu dashboard.</p>
+@if (TempData["Ok"] != null)
+{
+    <div class="alert alert-success text-center">@TempData["Ok"]</div>
+}
+
+<div class="text-center mt-4">
+
+    <div class="mb-3 text-center">
+        <a asp-action="AgregarMercaderia" asp-controller="Dashboard" class="btn btn-success btn-lg">
+            ➕ Agregar mercadería
+        </a>
+    </div>
+
+
+    <a asp-controller="Stock" asp-action="Index" class="btn btn-primary btn-lg">
+        📦 Ver Stock del Administrador
+    </a>
+</div>
+
+<!-- 🔹 Gráfico de stock principal -->
+<div class="container mt-5">
+    <h2 class="text-center text-primary fw-bold mb-4">
+        <i class="bi bi-bar-chart-line"></i> Gráfico de Stock
+    </h2>
+
+    <canvas id="stockChart" width="400" height="180"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const labels = [@string.Join(",", productos.Select(p => $"'{p.Nombre}'"))];
+    const data = [@string.Join(",", productos.Select(p => p.Cantidad))];
+
+    const ctx = document.getElementById('stockChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Cantidad en stock',
+                data: data,
+                backgroundColor: data.map(v => v < 10 ? 'rgba(255, 99, 132, 0.6)' : 'rgba(75, 192, 192, 0.6)'),
+                borderColor: data.map(v => v < 10 ? 'rgba(255, 99, 132, 1)' : 'rgba(75, 192, 192, 1)'),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Unidades en stock'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+</script>

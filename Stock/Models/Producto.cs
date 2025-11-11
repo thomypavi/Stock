@@ -17,5 +17,9 @@ namespace Stock.Models
         public decimal Precio { get; set; }
 
         public int IdProveedor { get; set; }
+
+        public int Cantidad { get; set; }
+
+        public int StockAdmin { get; set; }
     }
 }
