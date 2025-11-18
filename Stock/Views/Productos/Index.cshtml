@@ -1,0 +1,32 @@
+﻿@model List<Stock.Models.Producto>
+
+<div class="container mt-4">
+    <h2>Mis productos</h2>
+
+    <a class="btn btn-success mb-3"
+       asp-action="Crear"
+       asp-route-idProveedor="@ViewBag.IdProveedor">
+        + Agregar producto
+    </a>
+
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td>@p.Nombre</td>
+                    <td>@p.Descripcion</td>
+                    <td>$@p.Precio</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
