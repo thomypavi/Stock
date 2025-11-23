@@ -9,10 +9,10 @@
 
     <h2 class="text-primary fw-bold mb-4">📦 Control de Stock del Administrador</h2>
 
-    @if (TempData["Ok"] != null)
-    {
-        <div class="alert alert-success text-center">@TempData["Ok"]</div>
-    }
+@if (TempData["Ok"] != null)
+{
+    <div class="alert alert-success text-center">@TempData["Ok"]</div>
+}
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger text-center">@TempData["Error"]</div>
@@ -81,9 +81,10 @@
                 <button type="submit" class="btn btn-success btn-lg">
                     📤 Enviar pedidos seleccionados
                 </button>
-            </div>
+</div>
         }
     </form>
 
+    const ctx = document.getElementById('stockChart').getContext('2d');
 
 </div>
