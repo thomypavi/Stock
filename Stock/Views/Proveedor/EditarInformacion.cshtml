@@ -1,0 +1,41 @@
+﻿@model Stock.Models.Proveedor
+
+<div class="container mt-5" style="max-width:600px;">
+    @if (TempData["MensajeExito"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["MensajeExito"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow p-5">
+        <h3 class="mb-4 text-primary">Actualizar Datos de Proveedor</h3>
+
+        <form asp-action="GuardarCambios" asp-controller="Proveedor" method="post">
+
+            <input type="hidden" asp-for="IdProveedor" />
+
+            <div class="mb-3">
+                <label asp-for="Nombre" class="form-label">Nombre de la Empresa</label>
+                <input asp-for="Nombre" class="form-control" disabled />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Telefono" class="form-label">Teléfono</label>
+                <input asp-for="Telefono" type="tel" class="form-control" required />
+            </div>
+
+            <div class="mb-4">
+                <label asp-for="Direccion" class="form-label">Dirección</label>
+                <input asp-for="Direccion" class="form-control" required />
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-success btn-lg">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

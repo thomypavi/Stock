@@ -1,0 +1,81 @@
+﻿@model List<Stock.Models.OrdenDeCompra>
+
+<div class="container mt-4">
+    <h2>📋 Órdenes de Compra Pendientes</h2>
+    <p class="mb-3">Revisa las órdenes que requieren tu confirmación o gestión de envío.</p>
+
+    <table class="table table-hover table-bordered">
+        <thead>
+            <tr class="table-primary">
+                <th>ID Orden</th>
+                <th>Fecha Generación</th>
+                <th>Estado Actual</th>
+                <th style="width: 25%;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                @foreach (var orden in Model)
+                {
+                    <tr>
+                        <td>#@orden.IdOrden</td>
+                        <td>@orden.Fecha.ToShortDateString()</td>
+                        <td>
+                            @if (orden.Estado == "Pendiente")
+                            {
+                                <span class="badge bg-warning text-dark">Pendiente</span>
+                            }
+                            else if (orden.Estado == "Confirmada")
+                            {
+                                <span class="badge bg-info">Confirmada</span>
+                            }
+                            else if (orden.Estado == "Enviada")
+                            {
+                                <span class="badge bg-success">Enviada</span>
+                            }
+                            else
+                            {
+                                <span>@orden.Estado</span>
+                            }
+                        </td>
+                        <td>
+                            <a class="btn btn-sm btn-outline-primary"
+                               asp-action="Detalle"
+                               asp-route-idOrden="@orden.IdOrden">
+                                Ver
+                            </a>
+
+                            @if (orden.Estado == "Pendiente")
+                            {
+                                <a class="btn btn-sm btn-success"
+                                   href="#"
+                                   onclick="return confirmarEnvioSimple(@orden.IdOrden)">
+                                    Confirmar Envío
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted">No hay órdenes pendientes en este momento.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script>
+
+    function confirmarEnvioSimple(idOrden) {
+        if (confirm('¿Estás seguro de que deseas confirmar el envío de la Orden #' + idOrden + '?')) {
+
+            window.location.href = '@Url.Action("ConfirmarEnvio", "Proveedor")' + '?idOrden=' + idOrden;
+            return true;
+        }
+        return false;
+    }
+</script>
