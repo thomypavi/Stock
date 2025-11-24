@@ -72,10 +72,18 @@
 
     function confirmarEnvioSimple(idOrden) {
         if (confirm('¿Estás seguro de que deseas confirmar el envío de la Orden #' + idOrden + '?')) {
+
          
             window.location.href = '@Url.Action("ConfirmarEnvio", "Proveedor")' + '?idOrden=' + idOrden;
             return true;
         }
         return false; 
+
+
+            window.location.href = '@Url.Action("ConfirmarEnvio", "Proveedor")' + '?idOrden=' + idOrden;
+            return true;
+        }
+        return false;
+
     }
 </script>

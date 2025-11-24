@@ -11,7 +11,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Stock.Controllers
 {
-
+    
     [Authorize(Roles = "Proveedor")]
     public class ProveedorController : Controller
     {
@@ -22,26 +22,31 @@ namespace Stock.Controllers
             _configuration = configuration;
         }
 
+        
         private string? GetConnectionString() => _configuration.GetConnectionString("MiConexion");
 
-
+        
         private int GetCurrentProveedorId()
         {
+            
             var idClaim = User.FindFirst(ClaimTypes.NameIdentifier);
 
+            
             if (idClaim != null && int.TryParse(idClaim.Value, out int idProveedor))
             {
                 return idProveedor;
             }
+            
             return 0;
         }
 
-
+       
         public IActionResult Index()
         {
             return RedirectToAction("OrdenesRecibidas");
         }
 
+        
         public IActionResult OrdenesRecibidas()
         {
             List<OrdenDeCompra> ordenes = new List<OrdenDeCompra>();
@@ -55,8 +60,13 @@ namespace Stock.Controllers
                 using (SqlConnection con = new SqlConnection(connectionString))
                 {
                     con.Open();
+                    
+                    string query = @"
+                        SELECT IdOrden, Fecha, Estado, IdProveedor 
+                        FROM Ordenes 
+                        WHERE IdProveedor = @IdProveedor AND Estado != 'Enviada' 
+                        ORDER BY Fecha DESC";
 
-                    string query = "SELECT IdOrden, Fecha, Estado, IdProveedor FROM Ordenes WHERE IdProveedor = @IdProveedor AND Estado != 'Enviada'";
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
                         cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedorActual;
@@ -84,7 +94,7 @@ namespace Stock.Controllers
             return View(ordenes);
         }
 
-
+        
         public IActionResult HistorialDeOrdenes()
         {
             List<OrdenDeCompra> ordenes = new List<OrdenDeCompra>();
@@ -98,8 +108,12 @@ namespace Stock.Controllers
                 using (SqlConnection con = new SqlConnection(connectionString))
                 {
                     con.Open();
-
-                    string query = "SELECT IdOrden, Fecha, Estado, IdProveedor FROM Ordenes WHERE IdProveedor = @IdProveedor AND Estado = 'Enviada'";
+                    
+                    string query = @"
+                        SELECT IdOrden, Fecha, Estado, IdProveedor 
+                        FROM Ordenes 
+                        WHERE IdProveedor = @IdProveedor AND Estado = 'Enviada'
+                        ORDER BY Fecha DESC";
 
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
@@ -128,11 +142,13 @@ namespace Stock.Controllers
             return View(ordenes);
         }
 
+        
         public IActionResult Detalle(int idOrden)
         {
             int idProveedorActual = GetCurrentProveedorId();
             if (idProveedorActual == 0) return Unauthorized();
 
+            
             OrdenDetalleViewModel model = new OrdenDetalleViewModel
             {
                 Items = new List<OrdenItem>()
@@ -146,12 +162,13 @@ namespace Stock.Controllers
                 {
                     con.Open();
 
-
+                    
                     string queryCabecera = "SELECT Fecha, Estado, IdProveedor FROM Ordenes WHERE IdOrden = @IdOrden AND IdProveedor = @IdProveedor";
                     using (SqlCommand cmd = new SqlCommand(queryCabecera, con))
                     {
                         cmd.Parameters.Add("@IdOrden", SqlDbType.Int).Value = idOrden;
                         cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedorActual;
+
                         using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
@@ -163,12 +180,13 @@ namespace Stock.Controllers
                             }
                             else
                             {
+                               
                                 return NotFound();
                             }
                         }
                     }
 
-
+                    
                     string queryDetalle = @"
                         SELECT OI.IdProducto, OI.Cantidad, OI.PrecioUnitario, P.Nombre 
                         FROM OrdenItems OI 
@@ -204,7 +222,8 @@ namespace Stock.Controllers
             return View(model);
         }
 
-
+        
+        [HttpPost]
         public IActionResult ConfirmarEnvio(int idOrden)
         {
             int idProveedorActual = GetCurrentProveedorId();
@@ -216,9 +235,9 @@ namespace Stock.Controllers
                 using (SqlConnection con = new SqlConnection(connectionString))
                 {
                     con.Open();
-
-
+                    
                     string query = "UPDATE Ordenes SET Estado = 'Enviada' WHERE IdOrden = @IdOrden AND IdProveedor = @IdProveedor";
+
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
                         cmd.Parameters.Add("@IdOrden", SqlDbType.Int).Value = idOrden;
@@ -226,24 +245,25 @@ namespace Stock.Controllers
                         cmd.ExecuteNonQuery();
                     }
                 }
+                TempData["MensajeExito"] = $"Orden #{idOrden} marcada como 'Enviada'.";
             }
             catch (Exception ex)
             {
-                return Content("ERROR al confirmar envío: " + ex.Message);
+                TempData["MensajeError"] = "ERROR al confirmar envío: " + ex.Message;
             }
 
             return RedirectToAction("HistorialDeOrdenes");
         }
 
-
+        
         [HttpGet]
         public IActionResult CargarProducto()
         {
-            
+           
             return View(new CargarProductoViewModel());
         }
 
-
+       
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult CargarProducto(CargarProductoViewModel viewModel)
@@ -251,6 +271,7 @@ namespace Stock.Controllers
             int idProveedor = GetCurrentProveedorId();
 
             if (idProveedor == 0) return Unauthorized();
+
 
             if (!ModelState.IsValid)
             {
@@ -265,9 +286,9 @@ namespace Stock.Controllers
                     con.Open();
 
                     string query = @"INSERT INTO Productos 
-                                         (Nombre, Descripcion, Precio, IdProveedor, StockActual, StockMinimo, CantidadReposicion)
-                                         VALUES 
-                                         (@Nombre, @Descripcion, @Precio, @IdProveedor, @StockActual, @StockMinimo, @CantidadReposicion)";
+                                     (Nombre, Descripcion, Precio, IdProveedor, StockActual, StockMinimo, CantidadReposicion)
+                                     VALUES 
+                                     (@Nombre, @Descripcion, @Precio, @IdProveedor, 0, 0, 0)"; 
 
                     using (SqlCommand cmd = new SqlCommand(query, con))
                     {
@@ -275,11 +296,6 @@ namespace Stock.Controllers
                         cmd.Parameters.Add("@Descripcion", SqlDbType.VarChar).Value = viewModel.Descripcion ?? (object)DBNull.Value;
                         cmd.Parameters.Add("@Precio", SqlDbType.Decimal).Value = viewModel.Precio;
                         cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
-
-                        
-                        cmd.Parameters.Add("@StockActual", SqlDbType.Int).Value = 0;
-                        cmd.Parameters.Add("@StockMinimo", SqlDbType.Int).Value = 0;
-                        cmd.Parameters.Add("@CantidadReposicion", SqlDbType.Int).Value = 0;
 
                         cmd.ExecuteNonQuery();
                     }
@@ -290,18 +306,19 @@ namespace Stock.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "Error al cargar el producto: " + ex.Message);
+                
                 return View(viewModel);
             }
         }
 
 
+        
         [HttpGet]
         public IActionResult EditarProducto(int id)
         {
             int idProveedorActual = GetCurrentProveedorId();
             if (idProveedorActual == 0) return Unauthorized();
 
-            
             Producto producto = new Producto();
 
             try
@@ -311,7 +328,6 @@ namespace Stock.Controllers
                 {
                     con.Open();
 
-                    
                     string query = "SELECT Id, Nombre, Descripcion, Precio, IdProveedor FROM Productos WHERE Id = @IdProducto AND IdProveedor = @IdProveedor";
 
                     using (SqlCommand cmd = new SqlCommand(query, con))
@@ -346,7 +362,7 @@ namespace Stock.Controllers
             return View(producto);
         }
 
-
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult EditarProducto(Producto productoModificado)
@@ -365,8 +381,8 @@ namespace Stock.Controllers
                         con.Open();
 
                         string query = @"UPDATE Productos 
-                                             SET Nombre = @Nombre, Descripcion = @Descripcion, Precio = @Precio 
-                                             WHERE Id = @IdProducto AND IdProveedor = @IdProveedor";
+                                         SET Nombre = @Nombre, Descripcion = @Descripcion, Precio = @Precio 
+                                         WHERE Id = @IdProducto AND IdProveedor = @IdProveedor";
 
                         using (SqlCommand cmd = new SqlCommand(query, con))
                         {
@@ -392,7 +408,7 @@ namespace Stock.Controllers
             return View(productoModificado);
         }
 
-
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult EliminarProducto(int id)
@@ -435,7 +451,7 @@ namespace Stock.Controllers
             return RedirectToAction("MisProductos");
         }
 
-
+       
         public IActionResult MisProductos()
         {
             List<Producto> productos = new List<Producto>();
@@ -483,7 +499,7 @@ namespace Stock.Controllers
             return View(productos);
         }
 
-
+        
         [HttpGet]
         public IActionResult EditarInformacion()
         {
@@ -491,8 +507,8 @@ namespace Stock.Controllers
             if (idProveedorActual == 0) return Unauthorized();
 
             Proveedor proveedorActual = new Proveedor();
-
             string? connectionString = GetConnectionString();
+
             try
             {
                 using (SqlConnection con = new SqlConnection(connectionString))
@@ -522,7 +538,6 @@ namespace Stock.Controllers
             }
             catch (Exception ex)
             {
-
                 return Content($"ERROR al cargar datos de proveedor: {ex.Message}");
             }
 
@@ -530,11 +545,11 @@ namespace Stock.Controllers
         }
 
 
+       
         [HttpPost]
         public IActionResult GuardarCambios(Proveedor proveedorModificado)
         {
             int idProveedorActual = GetCurrentProveedorId();
-
 
             if (idProveedorActual == 0 || idProveedorActual != proveedorModificado.IdProveedor) return Unauthorized();
 
@@ -550,7 +565,6 @@ namespace Stock.Controllers
                         string query = @"UPDATE Proveedores SET Telefono = @Telefono, Direccion = @Direccion WHERE IdProveedor = @IdProveedor";
                         using (SqlCommand cmd = new SqlCommand(query, con))
                         {
-
                             cmd.Parameters.Add("@Telefono", SqlDbType.VarChar).Value = proveedorModificado.Telefono;
                             cmd.Parameters.Add("@Direccion", SqlDbType.VarChar).Value = proveedorModificado.Direccion;
                             cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedorActual;
@@ -563,13 +577,11 @@ namespace Stock.Controllers
                 }
                 catch (Exception ex)
                 {
-
                     TempData["MensajeError"] = $"Error al guardar cambios: {ex.Message}";
                     return View("EditarInformacion", proveedorModificado);
                 }
             }
-
-
+            
             return View("EditarInformacion", proveedorModificado);
         }
     }

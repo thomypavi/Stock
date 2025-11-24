@@ -20,6 +20,7 @@ namespace Stock.Models
 
         public int IdProveedor { get; set; }
 
+
         [Column("StockActual")]
         public int StockActual { get; set; } = 0; 
 
@@ -28,5 +29,10 @@ namespace Stock.Models
 
         [Column("CantidadReposicion")]
         public int CantidadReposicion { get; set; } = 0; 
+
+        public int Cantidad { get; set; }
+
+        public int StockAdmin { get; set; }
+
     }
 }

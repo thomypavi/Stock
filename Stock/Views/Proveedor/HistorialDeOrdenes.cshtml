@@ -9,7 +9,11 @@
 <p class="text-muted">Aquí se muestran todas las órdenes que ya fueron confirmadas y enviadas al cliente.</p>
 <hr />
 
+
 @if (Model == null || !Model.Any())
+
+@if (!Model.Any())
+
 {
     <div class="alert alert-info" role="alert">
         Actualmente no hay órdenes con el estado 'Enviada' para mostrar en el historial.
