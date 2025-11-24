@@ -21,38 +21,7 @@ namespace Stock.Controllers
         }
 
         // 🔹 Dashboard del administrador con proveedores + productos
-        public IActionResult DashboardAdministrativo()
-        {
-            List<Producto> productos = new List<Producto>();
-
-            string? connectionString = _configuration.GetConnectionString("MiConexion");
-            using (SqlConnection con = new SqlConnection(connectionString))
-            {
-                con.Open();
-                string query = "SELECT * FROM Productos";
-                using (SqlCommand cmd = new SqlCommand(query, con))
-                {
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            productos.Add(new Producto
-                            {
-                                Id = Convert.ToInt32(reader["Id"]),
-                                Nombre = reader["Nombre"].ToString() ?? "",
-                                Descripcion = reader["Descripcion"].ToString() ?? "",
-                                Precio = Convert.ToDecimal(reader["Precio"]),
-                                IdProveedor = Convert.ToInt32(reader["IdProveedor"]),
-                                Cantidad = Convert.ToInt32(reader["Cantidad"]) // ⚠️ importante
-                            });
-                        }
-                    }
-                }
-            }
-
-            ViewBag.Productos = productos;
-            return View();
-        }
+       
 
         [HttpGet]
         public IActionResult AgregarMercaderia(int? idProveedor)
@@ -196,7 +165,7 @@ namespace Stock.Controllers
                 stock = stock.Where(s => s.Cantidad <= filtro.Value).ToList();
 
             ViewBag.FiltroActual = filtro;
-
+            ViewBag.PedidoAbierto = filtro.HasValue;
             return View(stock);
         }
 

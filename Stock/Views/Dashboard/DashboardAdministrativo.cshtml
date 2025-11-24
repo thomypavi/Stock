@@ -9,6 +9,21 @@
 
     <h2 class="text-primary fw-bold mb-4">📦 Control de Stock del Administrador</h2>
 
+    <div class="mb-3 text-center">
+        <a asp-action="AgregarMercaderia" asp-controller="Dashboard" class="btn btn-success btn-lg">
+            ➕ Agregar mercadería al stock del administrador base 
+        </a>
+    </div>
+
+   
+
+    <!-- 🔹 Botón para abrir/cerrar pedidos -->
+    <div class="text-center my-4">
+        <button type="button" id="btnTogglePedidos" class="btn btn-primary btn-lg">
+            📥 Generar pedido de reposición
+        </button>
+    </div>
+
 @if (TempData["Ok"] != null)
 {
     <div class="alert alert-success text-center">@TempData["Ok"]</div>
@@ -18,6 +33,9 @@
         <div class="alert alert-danger text-center">@TempData["Error"]</div>
     }
 
+    <div id="seccionPedidos" style="display:none;">
+      
+    
     <!-- 🔍 FILTRO -->
     <form method="get" asp-action="DashboardAdministrativo" class="mb-4 d-flex align-items-center">
         <label class="fw-semibold me-2">Mostrar productos con stock menor o igual a:</label>
@@ -84,7 +102,30 @@
 </div>
         }
     </form>
-
-    const ctx = document.getElementById('stockChart').getContext('2d');
+    </div>
+    
 
 </div>
+
+<script>
+    const btn = document.getElementById("btnTogglePedidos");
+    const seccion = document.getElementById("seccionPedidos");
+
+    // 🔹 Abrir automáticamente si venimos de usar un filtro
+    const abrirAutomatico = '@(ViewBag.PedidoAbierto ?? false)';
+
+    if (abrirAutomatico === 'True') {
+        seccion.style.display = "block";
+        btn.textContent = "📥 Ocultar pedido de reposición";
+    }
+
+    btn.addEventListener("click", () => {
+        if (seccion.style.display === "none") {
+            seccion.style.display = "block";
+            btn.textContent = "📥 Ocultar pedido de reposición";
+        } else {
+            seccion.style.display = "none";
+            btn.textContent = "📥 Generar pedido de reposición";
+        }
+    });
+</script>
