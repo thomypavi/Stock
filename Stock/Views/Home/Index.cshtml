@@ -7,15 +7,18 @@
         <div class="card-body p-4">
             <h2 class="text-center mb-4 text-primary fw-bold">Iniciar Sesión</h2>
 
-            <form method="post" action="/Login/IniciarSesion">
+           
+            <form asp-action="IniciarSesion" asp-controller="Login" method="post">
                 <div class="mb-3">
                     <label for="email" class="form-label fw-semibold">Correo electrónico</label>
-                    <input type="email" name="email" id="email" class="form-control form-control-lg" placeholder="usuario@ejemplo.com"  />
+                    
+                    <input type="email" name="email" id="email" class="form-control form-control-lg" placeholder="usuario@ejemplo.com" />
                 </div>
 
                 <div class="mb-3">
                     <label for="contraseña" class="form-label fw-semibold">Contraseña</label>
-                    <input type="password" name="contraseña" id="contraseña" class="form-control form-control-lg" placeholder="••••••••"  />
+                   
+                    <input type="password" name="contraseña" id="contraseña" class="form-control form-control-lg" placeholder="••••••••" />
                 </div>
 
                 <div class="d-grid">
@@ -25,9 +28,9 @@
 
             @if (!string.IsNullOrEmpty(ViewData["ErrorMessage"] as string))
             {
-                <div class="alert alert-danger text-center mt-3" role="alert">
-                    @ViewData["ErrorMessage"]
-                </div>
+                    <div class="alert alert-danger text-center mt-3" role="alert">
+                        @ViewData["ErrorMessage"]
+                    </div>
             }
 
             <div class="text-center mt-4">

@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Stock.Models;
 
@@ -10,18 +11,29 @@ namespace Stock
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Leer la cadena de conexión
+            
             var connectionString = builder.Configuration.GetConnectionString("MiConexion")
                 ?? throw new Exception("❌ No se encontró la cadena de conexión 'MiConexion' en appsettings.json");
 
-            // Agregar servicios MVC
-            builder.Services.AddControllersWithViews();
+    
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    
+                    options.LoginPath = "/Login/Index";
+                    
+                    options.AccessDeniedPath = "/Home/AccessDenied";
+                   
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                    options.SlidingExpiration = true;
+                });
 
+           
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseSqlServer(builder.Configuration.GetConnectionString("MiConexion")));
+                options.UseSqlServer(connectionString));
 
+            
             builder.Services.AddControllersWithViews();
-
 
             var app = builder.Build();
 
@@ -35,8 +47,14 @@ namespace Stock
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+
+            
+            app.UseAuthentication();
+
+            
             app.UseAuthorization();
 
+            
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Login}/{action=Index}/{id?}");
