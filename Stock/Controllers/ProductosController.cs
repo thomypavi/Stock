@@ -109,9 +109,9 @@ namespace Stock.Controllers
         [HttpGet]
         public IActionResult Crear(int idProveedor)
         {
-            // **********************************
+         
             // CAMBIO CLAVE: INICIALIZAR ViewBag.Proveedores
-            // **********************************
+          
             ViewBag.Proveedores = ObtenerListaDeProveedores();
 
             var modelo = new Producto { IdProveedor = idProveedor };

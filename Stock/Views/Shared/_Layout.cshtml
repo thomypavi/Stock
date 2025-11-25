@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.Identity // Necesario para usar User.Identity
+﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Authorization
 
 <!DOCTYPE html>
 <html lang="en">
@@ -6,82 +7,94 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Stock</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Stock.styles.css" asp-append-version="true" />
 </head>
 <body>
+
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Stock</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">Stock</a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarContent" aria-controls="navbarContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+
+                <div class="collapse navbar-collapse" id="navbarContent">
+
+                    <ul class="navbar-nav me-auto">
+
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
 
-                        @if (User.Identity.IsAuthenticated)
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+
+                        @* ------------------------ PANEL ADMIN ------------------------ *@
+                        @if (User.IsInRole("Administrativo"))
                         {
-
-                            // INICIO: ENLACES DEL MÓDULO PROVEEDOR (SOLO SI ESTÁ LOGUEADO)
-
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Panel Proveedor
+                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown">
+                                    Panel Admin 👑
                                 </a>
-                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="OrdenesRecibidas">Órdenes Pendientes</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="HistorialDeOrdenes">Historial de Órdenes</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-
+                                <ul class="dropdown-menu">
                                     <li>
-                                        <a class="dropdown-item"
-                                           asp-controller="Productos"
-                                           asp-action="Crear"
-                                           asp-route-idProveedor="@User.FindFirst("IdUsuario")?.Value">
-                                            ➕ Agregar Producto
+                                        <a class="dropdown-item" asp-controller="Admin" asp-action="GestionProductos">
+                                            📦 Gestión de Productos
                                         </a>
                                     </li>
-
-                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="ProductosAsignados">Ver Productos Asignados</a></li>
-                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="EditarInformacion">Editar Datos</a></li>
                                 </ul>
                             </li>
-
-                            // FIN: ENLACES DEL MÓDULO PROVEEDOR
-
                         }
+
+                        @* ------------------------ PANEL PROVEEDOR ------------------------ *@
+                        @if (User.IsInRole("Proveedor"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown">
+                                    Panel Proveedor 📦
+                                </a>
+
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="OrdenesRecibidas">🛒 Órdenes Pendientes</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="HistorialDeOrdenes">⌛ Historial de Órdenes</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="MisProductos">📦 Mis Productos</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="CargarProducto">➕ Cargar Nuevo Producto</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="EditarInformacion">✏️ Editar Datos</a></li>
+                                </ul>
+                            </li>
+                        }
+
                     </ul>
 
+                    @* ------------------------ LOGIN / LOGOUT ------------------------ *@
                     <ul class="navbar-nav">
                         @if (User.Identity.IsAuthenticated)
                         {
-
-                            // OPCIÓN DE CERRAR SESIÓN (Logout) - Botón POST por seguridad
-
                             <li class="nav-item">
-                                <form asp-controller="Login" asp-action="CerrarSesion" method="post" class="nav-link p-0">
+                                <form asp-controller="Login" asp-action="CerrarSesion" method="post" class="d-inline">
                                     <button type="submit" class="btn btn-link nav-link text-danger">
-                                        Cerrar Sesión
+                                        Cerrar Sesión (@User.Identity.Name)
                                     </button>
                                 </form>
                             </li>
                         }
                         else
                         {
-
-                            // OPCIÓN DE INICIAR SESIÓN (Si no está logueado)
-
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Login" asp-action="Index">Iniciar Sesión</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Login" asp-action="Register">Registrarse</a>
                             </li>
                         }
                     </ul>
@@ -90,20 +103,42 @@
             </div>
         </nav>
     </header>
+
     <div class="container">
         <main role="main" class="pb-3">
+
+            @if (TempData["MensajeExito"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show">
+                    @TempData["MensajeExito"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
             @RenderBody()
+
         </main>
     </div>
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - Stock - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2025 - Stock - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="~/lib/jquery/dist/jquery.min.js" asp-append-version="true"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
+
 </body>
 </html>

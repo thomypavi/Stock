@@ -5,12 +5,12 @@ using System.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System;
-using Microsoft.AspNetCore.Authorization; // <--- AGREGADO
-using System.Security.Claims; // <--- AGREGADO
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Stock.Controllers
 {
-    [Authorize] // <--- AGREGADO: Protege todo el controlador
+    [Authorize(Roles = "Proveedor")]
     public class ProveedorController : Controller
     {
         private readonly IConfiguration _configuration;
@@ -20,52 +20,66 @@ namespace Stock.Controllers
             _configuration = configuration;
         }
 
-        private string? GetConnectionString() => _configuration.GetConnectionString("MiConexion");
+        private string GetConnectionString()
+            => _configuration.GetConnectionString("MiConexion")!;
 
-
-        // MÉTODO CORREGIDO: Obtiene el ID del usuario de la sesión (Claims)
-
+        // ------------------------------------------------------------
+        // OBTENER ID DEL PROVEEDOR LOGUEADO
+        // ------------------------------------------------------------
         private int GetCurrentProveedorId()
         {
-            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (idClaim != null && int.TryParse(idClaim, out int idProveedor))
-            {
+            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (idClaim != null && int.TryParse(idClaim.Value, out int idProveedor))
                 return idProveedor;
-            }
-            // Si llega aquí, es un error de seguridad (usuario logueado sin ID válido)
-            throw new Exception("Error de sesión: ID de Proveedor no encontrado en Claims.");
+
+            return 0;
         }
 
 
+        // ------------------------------------------------------------
+        // PANTALLA PRINCIPAL
+        // ------------------------------------------------------------
+        public IActionResult Index()
+        {
+            return RedirectToAction("OrdenesRecibidas");
+        }
+
+
+        // ------------------------------------------------------------
+        // ÓRDENES PENDIENTES
+        // ------------------------------------------------------------
         public IActionResult OrdenesRecibidas()
         {
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0) return Unauthorized();
+
             List<OrdenDeCompra> ordenes = new List<OrdenDeCompra>();
-            // Usamos el ID real de la sesión, ya no el valor fijo 5
-            int idProveedorActual = GetCurrentProveedorId();
 
             try
             {
-                string? connectionString = GetConnectionString();
-                using (SqlConnection con = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(GetConnectionString()))
                 {
                     con.Open();
-                    // CONSULTA CORREGIDA: Cambiar 'Ordenes' por el nombre real de tu tabla (ej: 'Pedidos')
-                    string query = "SELECT IdOrden, Fecha, Estado, IdProveedor FROM OrdenDeCompra WHERE IdProveedor = @IdProveedor";
-                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    string query = @"
+                        SELECT IdOrden, Fecha, Estado, IdProveedor
+                        FROM OrdenDeCompra
+                        WHERE IdProveedor = @IdProveedor 
+                          AND Estado != 'Enviada'
+                        ORDER BY Fecha DESC";
+
+                    using (var cmd = new SqlCommand(query, con))
                     {
-                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedorActual;
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
+                        using (var reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                // ... (resto del código de lectura) ...
                                 ordenes.Add(new OrdenDeCompra
                                 {
-                                    IdOrden = Convert.ToInt32(reader["IdOrden"]),
-                                    Fecha = Convert.ToDateTime(reader["Fecha"]),
-                                    Estado = reader["Estado"].ToString() ?? "",
-                                    IdProveedor = Convert.ToInt32(reader["IdProveedor"])
+                                    IdOrden = reader.GetInt32(0),
+                                    Fecha = reader.GetDateTime(1),
+                                    Estado = reader.GetString(2),
+                                    IdProveedor = reader.GetInt32(3)
                                 });
                             }
                         }
@@ -74,40 +88,49 @@ namespace Stock.Controllers
             }
             catch (Exception ex)
             {
-                return Content("ERROR DE DB en OrdenesRecibidas: " + ex.Message);
+                return Content("ERROR en Órdenes Recibidas: " + ex.Message);
             }
 
             return View(ordenes);
         }
 
+
+        // ------------------------------------------------------------
+        // HISTORIAL DE ÓRDENES ENVIADAS
+        // ------------------------------------------------------------
         public IActionResult HistorialDeOrdenes()
         {
-            List<OrdenDeCompra> ordenes = new List<OrdenDeCompra>();
-            int idProveedorActual = GetCurrentProveedorId();
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0) return Unauthorized();
+
+            List<OrdenDeCompra> ordenes = new();
 
             try
             {
-                string? connectionString = GetConnectionString();
-                using (SqlConnection con = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(GetConnectionString()))
                 {
                     con.Open();
 
-                    string query = "SELECT IdOrden, Fecha, Estado, IdProveedor FROM OrdenDeCompra WHERE IdProveedor = @IdProveedor AND Estado = 'Enviada'";
+                    string query = @"
+                        SELECT IdOrden, Fecha, Estado, IdProveedor
+                        FROM OrdenDeCompra
+                        WHERE IdProveedor = @IdProveedor 
+                          AND Estado = 'Enviada'
+                        ORDER BY Fecha DESC";
 
-                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    using (var cmd = new SqlCommand(query, con))
                     {
-                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedorActual;
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
+                        using (var reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                // ... (resto del código de lectura) ...
                                 ordenes.Add(new OrdenDeCompra
                                 {
-                                    IdOrden = Convert.ToInt32(reader["IdOrden"]),
-                                    Fecha = Convert.ToDateTime(reader["Fecha"]),
-                                    Estado = reader["Estado"].ToString() ?? "",
-                                    IdProveedor = Convert.ToInt32(reader["IdProveedor"])
+                                    IdOrden = reader.GetInt32(0),
+                                    Fecha = reader.GetDateTime(1),
+                                    Estado = reader.GetString(2),
+                                    IdProveedor = reader.GetInt32(3)
                                 });
                             }
                         }
@@ -116,145 +139,162 @@ namespace Stock.Controllers
             }
             catch (Exception ex)
             {
-                return Content("ERROR DE DB en HistorialDeOrdenes: " + ex.Message);
+                return Content("ERROR en Historial de Órdenes: " + ex.Message);
             }
 
             return View(ordenes);
         }
 
+
+        // ------------------------------------------------------------
+        // DETALLE DE UNA ORDEN
+        // ------------------------------------------------------------
         public IActionResult Detalle(int idOrden)
         {
-            OrdenDetalleViewModel model = new OrdenDetalleViewModel
-            {
-                Items = new List<OrdenItem>()
-            };
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0) return Unauthorized();
 
-            string? connectionString = GetConnectionString();
+            var model = new OrdenDetalleViewModel { Items = new List<OrdenItem>() };
 
             try
             {
-                using (SqlConnection con = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(GetConnectionString()))
                 {
                     con.Open();
 
-                    // OBTENER CABECERA DE LA ORDEN
-                    // CONSULTA CORREGIDA: Cambiar 'Ordenes' por el nombre real de tu tabla (ej: 'Pedidos')
-                    string queryCabecera = "SELECT Fecha, Estado, IdProveedor FROM OrdenDeCompra WHERE IdOrden = @IdOrden";
-                    using (SqlCommand cmd = new SqlCommand(queryCabecera, con))
+                    string queryCabecera = @"
+                        SELECT Fecha, Estado, IdProveedor
+                        FROM OrdenDeCompra
+                        WHERE IdOrden = @IdOrden AND IdProveedor = @IdProveedor";
+
+                    using (var cmd = new SqlCommand(queryCabecera, con))
                     {
                         cmd.Parameters.Add("@IdOrden", SqlDbType.Int).Value = idOrden;
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
+
+                        using (var r = cmd.ExecuteReader())
                         {
-                            if (reader.Read())
-                            {
-                                model.IdOrden = idOrden;
-                                model.Fecha = Convert.ToDateTime(reader["Fecha"]);
-                                model.Estado = reader["Estado"].ToString() ?? "";
-                                model.IdProveedor = Convert.ToInt32(reader["IdProveedor"]);
-                            }
-                            else
-                            {
-                                return NotFound();
-                            }
+                            if (!r.Read()) return NotFound();
+
+                            model.IdOrden = idOrden;
+                            model.Fecha = r.GetDateTime(0);
+                            model.Estado = r.GetString(1);
+                            model.IdProveedor = r.GetInt32(2);
                         }
                     }
 
-                    // OBTENER DETALLE (ÍTEMS) DE LA ORDEN
-                    // Asumimos que OrdenItems y Productos están correctos
                     string queryDetalle = @"
-                        SELECT OI.IdProducto, OI.Cantidad, OI.PrecioUnitario, P.Nombre 
-                        FROM OrdenItems OI 
-                        INNER JOIN Productos P ON OI.IdProducto = P.Id
+                        SELECT OI.IdProducto, OI.Cantidad, OI.PrecioUnitario, P.Nombre
+                        FROM OrdenItems OI
+                        JOIN Productos P ON OI.IdProducto = P.Id
                         WHERE OI.IdOrden = @IdOrden";
 
-                    using (SqlCommand cmdDetalle = new SqlCommand(queryDetalle, con))
+                    using (var cmd = new SqlCommand(queryDetalle, con))
                     {
-                        cmdDetalle.Parameters.Add("@IdOrden", SqlDbType.Int).Value = idOrden;
-                        using (SqlDataReader readerDetalle = cmdDetalle.ExecuteReader())
+                        cmd.Parameters.Add("@IdOrden", SqlDbType.Int).Value = idOrden;
+
+                        using (var rd = cmd.ExecuteReader())
                         {
-                            while (readerDetalle.Read())
+                            while (rd.Read())
                             {
                                 model.Items.Add(new OrdenItem
                                 {
-                                    IdProducto = Convert.ToInt32(readerDetalle["IdProducto"]),
-                                    NombreProducto = readerDetalle["Nombre"].ToString() ?? "Producto Desconocido",
-                                    Cantidad = Convert.ToInt32(readerDetalle["Cantidad"]),
-                                    PrecioUnitario = Convert.ToDouble(readerDetalle["PrecioUnitario"])
+                                    IdProducto = rd.GetInt32(0),
+                                    Cantidad = rd.GetInt32(1),
+                                    PrecioUnitario = rd.GetDouble(2),
+                                    NombreProducto = rd.GetString(3)
                                 });
                             }
                         }
                     }
-                }
 
-                model.Total = model.Items.Sum(i => i.Cantidad * i.PrecioUnitario);
+                    model.Total = model.Items.Sum(x => x.Cantidad * x.PrecioUnitario);
+                }
             }
             catch (Exception ex)
             {
-                return Content("ERROR en Detalle de Orden: " + ex.Message);
+                return Content("ERROR en detalle: " + ex.Message);
             }
 
             return View(model);
         }
 
 
+        // ------------------------------------------------------------
+        // CONFIRMAR ENVÍO
+        // ------------------------------------------------------------
+        [HttpPost]
         public IActionResult ConfirmarEnvio(int idOrden)
         {
-            string? connectionString = GetConnectionString();
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0) return Unauthorized();
+
             try
             {
-                using (SqlConnection con = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(GetConnectionString()))
                 {
                     con.Open();
 
-                    // CONSULTA CORREGIDA: Cambiar 'Ordenes' por el nombre real de tu tabla (ej: 'Pedidos')
-                    string query = "UPDATE OrdenDeCompra SET Estado = 'Enviada' WHERE IdOrden = @IdOrden";
-                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    string query = @"
+                        UPDATE OrdenDeCompra 
+                        SET Estado = 'Enviada'
+                        WHERE IdOrden = @IdOrden AND IdProveedor = @IdProveedor";
+
+                    using (var cmd = new SqlCommand(query, con))
                     {
                         cmd.Parameters.Add("@IdOrden", SqlDbType.Int).Value = idOrden;
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
                         cmd.ExecuteNonQuery();
                     }
                 }
+
+                TempData["MensajeExito"] = $"Orden #{idOrden} enviada.";
             }
             catch (Exception ex)
             {
-                return Content("ERROR al confirmar envío: " + ex.Message);
+                TempData["MensajeError"] = "ERROR al confirmar envío: " + ex.Message;
             }
 
             return RedirectToAction("HistorialDeOrdenes");
         }
 
-        public IActionResult ProductosAsignados()
+
+        // ------------------------------------------------------------
+        // MIS PRODUCTOS
+        // ------------------------------------------------------------
+        public IActionResult MisProductos()
         {
-            // ... (El resto del código de ProductosAsignados no tiene fallas de tabla evidentes) ...
-            List<Producto> productos = new List<Producto>();
-            int idProveedorActual = GetCurrentProveedorId();
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0) return Unauthorized();
+
+            List<Producto> productos = new();
 
             try
             {
-                string? connectionString = GetConnectionString();
-                using (SqlConnection con = new SqlConnection(connectionString))
+                using (var con = new SqlConnection(GetConnectionString()))
                 {
                     con.Open();
 
                     string query = @"
-                        SELECT Id, Nombre, Descripcion, Precio, IdProveedor 
+                        SELECT Id, Nombre, Descripcion, Precio, IdProveedor
                         FROM Productos
                         WHERE IdProveedor = @IdProveedor";
 
-                    using (SqlCommand cmd = new SqlCommand(query, con))
+                    using (var cmd = new SqlCommand(query, con))
                     {
-                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedorActual;
-                        using (SqlDataReader reader = cmd.ExecuteReader())
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
+
+                        using (var reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
                                 productos.Add(new Producto
                                 {
-                                    Id = Convert.ToInt32(reader["Id"]),
-                                    Nombre = reader["Nombre"].ToString() ?? "",
-                                    Descripcion = reader["Descripcion"].ToString() ?? "",
-                                    Precio = Convert.ToDecimal(reader["Precio"]),
-                                    IdProveedor = Convert.ToInt32(reader["IdProveedor"])
+                                    Id = reader.GetInt32(0),
+                                    Nombre = reader.GetString(1),
+                                    Descripcion = reader.GetString(2),
+                                    Precio = reader.GetDecimal(3),
+                                    IdProveedor = reader.GetInt32(4)
                                 });
                             }
                         }
@@ -263,93 +303,289 @@ namespace Stock.Controllers
             }
             catch (Exception ex)
             {
-                return Content("ERROR DE DB en ProductosAsignados: " + ex.Message);
+                return Content("ERROR en Mis Productos: " + ex.Message);
             }
 
             return View(productos);
         }
 
 
-        public IActionResult EditarInformacion()
+        // ------------------------------------------------------------
+        // CARGAR PRODUCTO
+        // ------------------------------------------------------------
+        [HttpGet]
+        public IActionResult CargarProducto()
         {
-            // ... (código de EditarInformacion) ...
-            int idProveedorActual = GetCurrentProveedorId();
-            Proveedor proveedorActual = new Proveedor();
-
-            string? connectionString = GetConnectionString();
-            using (SqlConnection con = new SqlConnection(connectionString))
-            {
-                try
-                {
-                    con.Open();
-
-                    string query = "SELECT IdProveedor, Nombre, Telefono, Direccion FROM Provedores WHERE IdProveedor = @IdProveedor";
-                    using (SqlCommand cmd = new SqlCommand(query, con))
-                    {
-                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedorActual;
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                proveedorActual.IdProveedor = Convert.ToInt32(reader["IdProveedor"]);
-                                proveedorActual.Nombre = reader["Nombre"].ToString() ?? "";
-                                proveedorActual.Telefono = reader["Telefono"].ToString() ?? "";
-                                proveedorActual.Direccion = reader["Direccion"].ToString() ?? "";
-                            }
-                            else
-                            {
-                                return NotFound();
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return Content("ERROR en EditarInformacion: " + ex.Message);
-                }
-            }
-            return View(proveedorActual);
+            return View(new CargarProductoViewModel());
         }
 
         [HttpPost]
-        public IActionResult GuardarCambios(Proveedor proveedorModificado)
+        public IActionResult CargarProducto(CargarProductoViewModel vm)
         {
-            // ... (código de GuardarCambios) ...
-            if (ModelState.IsValid)
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0) return Unauthorized();
+
+            if (!ModelState.IsValid)
+                return View(vm);
+
+            try
             {
-                string? connectionString = GetConnectionString();
-                try
+                using (var con = new SqlConnection(GetConnectionString()))
                 {
-                    using (SqlConnection con = new SqlConnection(connectionString))
+                    con.Open();
+
+                    string query = @"
+                        INSERT INTO Productos (Nombre, Descripcion, Precio, IdProveedor)
+                        VALUES (@Nombre, @Descripcion, @Precio, @IdProveedor)";
+
+                    using (var cmd = new SqlCommand(query, con))
                     {
-                        con.Open();
+                        cmd.Parameters.Add("@Nombre", SqlDbType.VarChar).Value = vm.Nombre;
+                        cmd.Parameters.Add("@Descripcion", SqlDbType.VarChar).Value = vm.Descripcion ?? (object)DBNull.Value;
+                        cmd.Parameters.Add("@Precio", SqlDbType.Decimal).Value = vm.Precio;
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
 
-                        string query = @"UPDATE Proveedores SET Telefono = @Telefono, Direccion = @Direccion WHERE IdProveedor = @IdProveedor";
-                        using (SqlCommand cmd = new SqlCommand(query, con))
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                TempData["MensajeExito"] = "Producto cargado correctamente.";
+                return RedirectToAction("MisProductos");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Error: " + ex.Message);
+                return View(vm);
+            }
+        }
+
+
+        // ------------------------------------------------------------
+        // EDITAR PRODUCTO
+        // ------------------------------------------------------------
+        [HttpGet]
+        public IActionResult EditarProducto(int id)
+        {
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0) return Unauthorized();
+
+            Producto? producto = null;
+
+            try
+            {
+                using (var con = new SqlConnection(GetConnectionString()))
+                {
+                    con.Open();
+
+                    string query = @"
+                        SELECT Id, Nombre, Descripcion, Precio, IdProveedor
+                        FROM Productos
+                        WHERE Id = @IdProducto AND IdProveedor = @IdProveedor";
+
+                    using (var cmd = new SqlCommand(query, con))
+                    {
+                        cmd.Parameters.Add("@IdProducto", SqlDbType.Int).Value = id;
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
+
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            cmd.Parameters.Add("@Telefono", SqlDbType.VarChar).Value = proveedorModificado.Telefono;
-                            cmd.Parameters.Add("@Direccion", SqlDbType.VarChar).Value = proveedorModificado.Direccion;
-                            cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = proveedorModificado.IdProveedor;
-
-                            cmd.ExecuteNonQuery();
+                            if (reader.Read())
+                            {
+                                producto = new Producto
+                                {
+                                    Id = reader.GetInt32(0),
+                                    Nombre = reader.GetString(1),
+                                    Descripcion = reader.GetString(2),
+                                    Precio = reader.GetDecimal(3),
+                                    IdProveedor = reader.GetInt32(4)
+                                };
+                            }
+                            else
+                                return NotFound();
                         }
                     }
                 }
-                catch (Exception ex)
-                {
-                    return Content("ERROR al GuardarCambios: " + ex.Message);
-                }
-
-                TempData["MensajeExito"] = "La información se actualizó correctamente.";
-                return RedirectToAction("EditarInformacion");
+            }
+            catch (Exception ex)
+            {
+                TempData["MensajeError"] = "ERROR al cargar producto: " + ex.Message;
+                return RedirectToAction("MisProductos");
             }
 
-            return View("EditarInformacion", proveedorModificado);
+            return View(producto);
         }
 
-        public IActionResult Index()
+
+        [HttpPost]
+        public IActionResult EditarProducto(Producto producto)
         {
-            return RedirectToAction("OrdenesRecibidas");
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0 || idProveedor != producto.IdProveedor)
+                return Unauthorized();
+
+            if (!ModelState.IsValid)
+                return View(producto);
+
+            try
+            {
+                using (var con = new SqlConnection(GetConnectionString()))
+                {
+                    con.Open();
+
+                    string query = @"
+                        UPDATE Productos 
+                        SET Nombre = @Nombre, Descripcion = @Descripcion, Precio = @Precio
+                        WHERE Id = @IdProducto AND IdProveedor = @IdProveedor";
+
+                    using (var cmd = new SqlCommand(query, con))
+                    {
+                        cmd.Parameters.Add("@Nombre", SqlDbType.VarChar).Value = producto.Nombre;
+                        cmd.Parameters.Add("@Descripcion", SqlDbType.VarChar).Value = producto.Descripcion ?? (object)DBNull.Value;
+                        cmd.Parameters.Add("@Precio", SqlDbType.Decimal).Value = producto.Precio;
+                        cmd.Parameters.Add("@IdProducto", SqlDbType.Int).Value = producto.Id;
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                TempData["MensajeExito"] = "Producto actualizado.";
+                return RedirectToAction("MisProductos");
+            }
+            catch (Exception ex)
+            {
+                TempData["MensajeError"] = "ERROR al guardar cambios: " + ex.Message;
+                return View(producto);
+            }
+        }
+
+
+        // ------------------------------------------------------------
+        // ELIMINAR PRODUCTO
+        // ------------------------------------------------------------
+        [HttpPost]
+        public IActionResult EliminarProducto(int id)
+        {
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0) return Unauthorized();
+
+            try
+            {
+                using (var con = new SqlConnection(GetConnectionString()))
+                {
+                    con.Open();
+
+                    string query = @"
+                        DELETE FROM Productos 
+                        WHERE Id = @IdProducto AND IdProveedor = @IdProveedor";
+
+                    using (var cmd = new SqlCommand(query, con))
+                    {
+                        cmd.Parameters.Add("@IdProducto", SqlDbType.Int).Value = id;
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                TempData["MensajeExito"] = "Producto eliminado.";
+            }
+            catch (Exception ex)
+            {
+                TempData["MensajeError"] = "ERROR al eliminar: " + ex.Message;
+            }
+
+            return RedirectToAction("MisProductos");
+        }
+
+
+        // ------------------------------------------------------------
+        // EDITAR INFORMACIÓN DEL PROVEEDOR
+        // ------------------------------------------------------------
+        [HttpGet]
+        public IActionResult EditarInformacion()
+        {
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0) return Unauthorized();
+
+            Proveedor proveedor = new();
+
+            try
+            {
+                using (var con = new SqlConnection(GetConnectionString()))
+                {
+                    con.Open();
+
+                    string query = @"
+                        SELECT IdProveedor, Nombre, Telefono, Direccion
+                        FROM Proveedores
+                        WHERE IdProveedor = @IdProveedor";
+
+                    using (var cmd = new SqlCommand(query, con))
+                    {
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
+
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                proveedor.IdProveedor = reader.GetInt32(0);
+                                proveedor.Nombre = reader.GetString(1);
+                                proveedor.Telefono = reader.GetString(2);
+                                proveedor.Direccion = reader.GetString(3);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content("ERROR al cargar información del proveedor: " + ex.Message);
+            }
+
+            return View(proveedor);
+        }
+
+
+        [HttpPost]
+        public IActionResult GuardarCambios(Proveedor proveedor)
+        {
+            int idProveedor = GetCurrentProveedorId();
+            if (idProveedor == 0 || idProveedor != proveedor.IdProveedor)
+                return Unauthorized();
+
+            if (!ModelState.IsValid)
+                return View("EditarInformacion", proveedor);
+
+            try
+            {
+                using (var con = new SqlConnection(GetConnectionString()))
+                {
+                    con.Open();
+
+                    string query = @"
+                        UPDATE Proveedores
+                        SET Telefono = @Telefono, Direccion = @Direccion
+                        WHERE IdProveedor = @IdProveedor";
+
+                    using (var cmd = new SqlCommand(query, con))
+                    {
+                        cmd.Parameters.Add("@Telefono", SqlDbType.VarChar).Value = proveedor.Telefono;
+                        cmd.Parameters.Add("@Direccion", SqlDbType.VarChar).Value = proveedor.Direccion;
+                        cmd.Parameters.Add("@IdProveedor", SqlDbType.Int).Value = idProveedor;
+
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+
+                TempData["MensajeExito"] = "Información actualizada.";
+                return RedirectToAction("EditarInformacion");
+            }
+            catch (Exception ex)
+            {
+                TempData["MensajeError"] = "ERROR al guardar cambios: " + ex.Message;
+                return View("EditarInformacion", proveedor);
+            }
         }
     }
 }
