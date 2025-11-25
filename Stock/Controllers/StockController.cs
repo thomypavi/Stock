@@ -23,7 +23,7 @@ namespace Stock.Controllers
             {
                 con.Open();
 
-                
+
                 string insertMissing = @"
         INSERT INTO StockAdministrador (IdProducto, Cantidad)
         SELECT p.Id, 0
@@ -36,7 +36,7 @@ namespace Stock.Controllers
                     cmdInsert.ExecuteNonQuery();
                 }
 
-                
+
                 string query = @"
         SELECT sa.Id, sa.Cantidad,
                p.Id AS IdProducto, p.Nombre AS NombreProducto, p.Descripcion
@@ -162,7 +162,7 @@ namespace Stock.Controllers
             {
                 con.Open();
 
-                
+
                 int idProducto = 0;
                 int cantidad = 0;
 
@@ -179,7 +179,7 @@ namespace Stock.Controllers
                     }
                 }
 
-                
+
                 using (SqlCommand cmd2 = new SqlCommand(
                     "UPDATE StockAdministrador SET Cantidad = Cantidad + @Cant, FechaActualizacion = GETDATE() WHERE IdProducto = @Prod", con))
                 {
@@ -188,7 +188,7 @@ namespace Stock.Controllers
                     cmd2.ExecuteNonQuery();
                 }
 
-                
+
                 using (SqlCommand cmd3 = new SqlCommand(
                     "UPDATE SolicitudesPedido SET Estado = 'Recibido' WHERE Id = @Id", con))
                 {

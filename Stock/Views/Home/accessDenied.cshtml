@@ -1,0 +1,27 @@
+﻿@{
+    ViewData["Title"] = "Acceso Denegado";
+}
+
+<div class="container text-center mt-5">
+    <h1 class="text-danger">403 Acceso Denegado</h1>
+    <h2 class="mt-3">No tienes permisos suficientes para ver esta página.</h2>
+
+    <p class="lead mt-4">
+        Tu rol actual no te permite acceder al recurso solicitado.
+    </p>
+
+    <a href="@Url.Action("Index", "Dashboard")" class="btn btn-primary mt-3">
+        Volver al Dashboard
+    </a>
+
+    @{
+
+        var returnUrl = Context.Request.Query["ReturnUrl"];
+    }
+    @if (!string.IsNullOrEmpty(returnUrl))
+    {
+        <div class="mt-4">
+            <small class="text-muted">Recurso denegado: @returnUrl</small>
+        </div>
+    }
+</div>

@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity // Necesario para usar User.Identity
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -25,7 +27,65 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+
+                            // INICIO: ENLACES DEL MÓDULO PROVEEDOR (SOLO SI ESTÁ LOGUEADO)
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Panel Proveedor
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="OrdenesRecibidas">Órdenes Pendientes</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="HistorialDeOrdenes">Historial de Órdenes</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+
+                                    <li>
+                                        <a class="dropdown-item"
+                                           asp-controller="Productos"
+                                           asp-action="Crear"
+                                           asp-route-idProveedor="@User.FindFirst("IdUsuario")?.Value">
+                                            ➕ Agregar Producto
+                                        </a>
+                                    </li>
+
+                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="ProductosAsignados">Ver Productos Asignados</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Proveedor" asp-action="EditarInformacion">Editar Datos</a></li>
+                                </ul>
+                            </li>
+
+                            // FIN: ENLACES DEL MÓDULO PROVEEDOR
+
+                        }
                     </ul>
+
+                    <ul class="navbar-nav">
+                        @if (User.Identity.IsAuthenticated)
+                        {
+
+                            // OPCIÓN DE CERRAR SESIÓN (Logout) - Botón POST por seguridad
+
+                            <li class="nav-item">
+                                <form asp-controller="Login" asp-action="CerrarSesion" method="post" class="nav-link p-0">
+                                    <button type="submit" class="btn btn-link nav-link text-danger">
+                                        Cerrar Sesión
+                                    </button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+
+                            // OPCIÓN DE INICIAR SESIÓN (Si no está logueado)
+
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Login" asp-action="Index">Iniciar Sesión</a>
+                            </li>
+                        }
+                    </ul>
+
                 </div>
             </div>
         </nav>

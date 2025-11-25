@@ -1,14 +1,28 @@
 ﻿@model List<Stock.Models.Producto>
+@using Microsoft.AspNetCore.Authorization
+
+@{
+
+    bool isAdmin = User.IsInRole("Administrativo");
+    ViewData["Title"] = isAdmin ? "Gestión de Todos los Productos" : "Mis Productos";
+}
 
 <div class="container mt-4">
-    <h2>Mis productos</h2>
+    <h2 class="text-@(isAdmin ? "primary" : "secondary")">@ViewData["Title"]</h2>
 
-    <a class="btn btn-success mb-3"
-       asp-action="Crear"
-       asp-route-idProveedor="@ViewBag.IdProveedor">
-        + Agregar producto
-    </a>
+@if (isAdmin)
+{
+        <p>
+            <a asp-controller="Admin" asp-action="CrearProducto" class="btn btn-success mb-3">➕ Crear Nuevo Producto</a>
+        </p>
+}
+else
+{
 
+        <p>
+            <a asp-action="Crear" class="btn btn-success mb-3">➕ Agregar Producto</a>
+        </p>
+}
 
     <table class="table table-striped">
         <thead>
@@ -16,6 +30,11 @@
                 <th>Nombre</th>
                 <th>Descripción</th>
                 <th>Precio</th>
+                @if (isAdmin)
+                {
+                    <th>ID Proveedor</th>
+                }
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -25,8 +44,31 @@
                     <td>@p.Nombre</td>
                     <td>@p.Descripcion</td>
                     <td>$@p.Precio</td>
+                    @if (isAdmin)
+                    {
+                        <td>@p.IdProveedor</td>
+                    }
+                    <td>
+                        @{
+
+                            string actionController = isAdmin ? "Admin" : "Productos";
+                            string editAction = isAdmin ? "EditarProducto" : "Editar";
+                            string deleteAction = isAdmin ? "EliminarProducto" : "Eliminar";
+                        }
+
+                        <a asp-controller="@actionController" asp-action="@editAction" asp-route-id="@p.Id" class="btn btn-sm btn-warning">Editar</a>
+
+                        <form asp-controller="@actionController" asp-action="@deleteAction" method="post" style="display:inline;">
+                            <input type="hidden" name="id" value="@p.Id" />
+
+                            @if (!isAdmin)
+                            {
+                                <input type="hidden" name="idProveedor" value="@p.IdProveedor" />
+                            }
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de que quieres eliminar este producto?')">Eliminar</button>
+                        </form>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
-</div>

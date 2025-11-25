@@ -1,7 +1,8 @@
-﻿@model Stock.Models.Proveedor
+﻿@model Stock.Models.CargarProductoViewModel
+
 
 @{
-    ViewData["Title"] = "Editar Información de Proveedor";
+    ViewData["Title"] = "Cargar Nuevo Producto";
 }
 
 <div class="container mt-5" style="max-width:600px;">
@@ -14,7 +15,6 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
-
     @if (TempData["MensajeError"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -23,11 +23,10 @@
         </div>
     }
 
-
     <div class="card shadow p-5">
-        <h3 class="mb-4 text-primary">Actualizar Datos de Proveedor 📋</h3>
+        <h3 class="mb-4 text-primary">+ Cargar mi Producto 📦</h3>
 
-        <form asp-action="GuardarCambios" asp-controller="Proveedor" method="post">
+        <form asp-action="CargarProducto" asp-controller="Proveedor" method="post">
             @Html.AntiForgeryToken()
 
 
@@ -39,34 +38,34 @@
             }
 
 
-            <input type="hidden" asp-for="IdProveedor" />
-
 
             <div class="mb-3">
-                <label asp-for="Nombre" class="form-label">Nombre de la Empresa</label>
-
-                <input asp-for="Nombre" class="form-control" disabled />
+                <label asp-for="Nombre" class="form-label">Nombre del Producto</label>
+                <input asp-for="Nombre" class="form-control" />
+                <span asp-validation-for="Nombre" class="text-danger"></span>
             </div>
-
 
             <div class="mb-3">
-                <label asp-for="Telefono" class="form-label">Teléfono</label>
-                <input asp-for="Telefono" type="tel" class="form-control" required />
-                <span asp-validation-for="Telefono" class="text-danger"></span>
+                <label asp-for="Descripcion" class="form-label">Descripción (Opcional)</label>
+                <textarea asp-for="Descripcion" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Descripcion" class="text-danger"></span>
             </div>
-
 
             <div class="mb-4">
-                <label asp-for="Direccion" class="form-label">Dirección</label>
-                <input asp-for="Direccion" class="form-control" required />
-                <span asp-validation-for="Direccion" class="text-danger"></span>
+                <label asp-for="Precio" class="form-label">Precio</label>
+                <input asp-for="Precio" type="number" step="0.01" class="form-control" />
+                <span asp-validation-for="Precio" class="text-danger"></span>
             </div>
 
 
-            <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-success btn-lg">
-                    Guardar Cambios
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    Guardar Producto
                 </button>
+                <a asp-action="MisProductos" class="btn btn-secondary mt-2">
+                    Cancelar y Volver
+                </a>
             </div>
         </form>
     </div>
@@ -76,4 +75,5 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
 }

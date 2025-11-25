@@ -1,0 +1,74 @@
+﻿@model List<Stock.Models.Producto>
+
+@{
+    ViewData["Title"] = "Mis Productos";
+}
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="display-6">🛒 Mis Productos Publicados</h2>
+        <a asp-action="CargarProducto" class="btn btn-success">
+            + Cargar Nuevo Producto
+        </a>
+    </div>
+
+
+    @if (TempData["MensajeExito"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["MensajeExito"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info text-center" role="alert">
+            Aún no tienes productos cargados. ¡Comienza ahora!
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th class="text-end">Precio</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Id</td>
+                            <td><strong>@item.Nombre</strong></td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.Descripcion))
+                                {
+                                    <span class="text-muted small">@item.Descripcion</span>
+                                }
+                                else
+                                {
+                                    <span class="text-secondary fst-italic">Sin descripción</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                **$@item.Precio.ToString("N2")**
+                            </td>
+                            <td class="text-center">
+
+                                <a asp-action="EditarProducto" asp-route-id="@item.Id" class="btn btn-sm btn-warning me-2">Editar</a>
+                                <a asp-action="EliminarProducto" asp-route-id="@item.Id" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro de que desea eliminar el producto @item.Nombre?');">Eliminar</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

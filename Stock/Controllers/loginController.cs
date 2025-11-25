@@ -2,9 +2,13 @@
 using Microsoft.Data.SqlClient;
 using Stock.Models;
 using System.Data;
+using System.Security.Claims; // <--- NECESARIO
+using Microsoft.AspNetCore.Authentication; // <--- NECESARIO (Para SignIn/SignOut)
+using Microsoft.AspNetCore.Authentication.Cookies; // <--- NECESARIO (Para CookieAuthenticationDefaults)
 
 namespace Stock.Controllers
 {
+    // Hacemos el controlador 'async' para poder usar await en las acciones de autenticación
     public class LoginController : Controller
     {
         private readonly IConfiguration _configuration;
@@ -16,26 +20,67 @@ namespace Stock.Controllers
 
         public IActionResult Index()
         {
+            // Si el usuario ya está autenticado, redirige automáticamente
+            if (User.Identity.IsAuthenticated)
+            {
+                // Podrías redirigir a un dashboard genérico o verificar el rol aquí
+                return RedirectToAction("Index", "Home");
+            }
             return View();
         }
 
         [HttpPost]
-        public IActionResult IniciarSesion(string email, string contraseña)
+        public async Task<IActionResult> IniciarSesion(string email, string contraseña) // <--- CAMBIO CRUCIAL: AGREGADO async y Task
         {
             var usuario = VerificarUsuario(email, contraseña);
 
             if (usuario != null)
             {
-                if (usuario.TipoUsuario == "Proveedor")
-                    return RedirectToAction("Index", "Productos", new { idProveedor = usuario.Id });
-                else if (usuario.TipoUsuario == "Administrativo")
-                    return RedirectToAction("DashboardAdministrativo", "Dashboard");
+                // ***************************************************************
+                // 1. CREAR LA IDENTIDAD Y LA COOKIE DE SESIÓN
+                // ***************************************************************
+                var claims = new List<Claim>
+                {
+                    // CRUCIAL: Almacena el ID que se usará en ProveedorController (NameIdentifier)
+                    new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+                    new Claim(ClaimTypes.Email, usuario.Email),
+                    new Claim(ClaimTypes.Role, usuario.TipoUsuario) // Almacena el rol si lo necesitas
+                };
 
+                var claimsIdentity = new ClaimsIdentity(
+                    claims,
+                    CookieAuthenticationDefaults.AuthenticationScheme);
+
+                // Firma la cookie de autenticación e inicia la sesión
+                await HttpContext.SignInAsync( // <--- CAMBIO CRUCIAL: AGREGADO await
+                    CookieAuthenticationDefaults.AuthenticationScheme,
+                    new ClaimsPrincipal(claimsIdentity));
+                // ***************************************************************
+
+                // Redirección basada en el tipo de usuario
+                if (usuario.TipoUsuario == "Proveedor")
+                {
+                    // En el _Layout, usamos ProveedorController, así que vamos a su acción principal
+                    return RedirectToAction("OrdenesRecibidas", "Proveedor");
+                }
+                else if (usuario.TipoUsuario == "Administrativo")
+                {
+                    return RedirectToAction("DashboardAdministrativo", "Dashboard");
+                }
             }
 
             ViewData["ErrorMessage"] = "Usuario o contraseña incorrectos.";
             return View("Index");
         }
+
+        [HttpPost]
+        public async Task<IActionResult> CerrarSesion() // <--- NECESARIO PARA EL BOTÓN DE LOGOUT
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Index", "Login");
+        }
+
+        // --- Resto del código (Register y VerificarUsuario) permanece igual ---
 
         public IActionResult Register()
         {
@@ -45,8 +90,9 @@ namespace Stock.Controllers
         [HttpPost]
         public IActionResult Register(Usuario nuevoUsuario)
         {
+            // ... (código de registro) ...
             string? connectionString = _configuration.GetConnectionString("MiConexion")
-                ?? throw new Exception("Cadena de conexión no encontrada");
+                 ?? throw new Exception("Cadena de conexión no encontrada");
 
             using (SqlConnection con = new SqlConnection(connectionString))
             {
@@ -73,7 +119,7 @@ namespace Stock.Controllers
             Usuario? usuario = null;
 
             string? connectionString = _configuration.GetConnectionString("MiConexion")
-                ?? throw new Exception("Cadena de conexión no encontrada");
+                 ?? throw new Exception("Cadena de conexión no encontrada");
 
             using (SqlConnection con = new SqlConnection(connectionString))
             {

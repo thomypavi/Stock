@@ -11,11 +11,11 @@
 
     <div class="mb-3 text-center">
         <a asp-action="AgregarMercaderia" asp-controller="Dashboard" class="btn btn-success btn-lg">
-            ➕ Agregar mercadería administrador base 
+            ➕ Agregar mercadería administrador base
         </a>
     </div>
 
-   
+
 
     <!-- 🔹 Botón para abrir/cerrar pedidos -->
     <div class="text-center my-4">
@@ -24,115 +24,115 @@
         </button>
     </div>
 
-@if (TempData["Ok"] != null)
-{
-    <div class="alert alert-success text-center">@TempData["Ok"]</div>
-}
+    @if (TempData["Ok"] != null)
+    {
+        <div class="alert alert-success text-center">@TempData["Ok"]</div>
+    }
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger text-center">@TempData["Error"]</div>
     }
 
     <div id="seccionPedidos" style="display:none;">
-      
-    
-    <!-- 🔍 FILTRO -->
-    <form method="get" asp-action="DashboardAdministrativo" class="mb-4 d-flex align-items-center">
-        <label class="fw-semibold me-2">Mostrar productos con stock menor o igual a:</label>
-        <input type="number" name="filtro" value="@(filtro ?? 10)" class="form-control w-auto me-2" min="0" />
-        <button class="btn btn-primary">Filtrar</button>
-    </form>
 
-    <!-- 📋 TABLA DE PRODUCTOS -->
-    <form asp-action="EnviarPedidos" asp-controller="Dashboard" method="post">
-        <table class="table table-striped table-hover text-center align-middle">
-            <thead class="table-warning">
-                <tr>
-                    <th>Seleccionar</th>
-                    <th>Producto</th>
-                    <th>Descripción</th>
-                    <th>Stock actual (Admin)</th>
-                    <th>Cantidad a pedir</th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model.Count == 0)
-                {
+
+        <!-- 🔍 FILTRO -->
+        <form method="get" asp-action="DashboardAdministrativo" class="mb-4 d-flex align-items-center">
+            <label class="fw-semibold me-2">Mostrar productos con stock menor o igual a:</label>
+            <input type="number" name="filtro" value="@(filtro ?? 10)" class="form-control w-auto me-2" min="0" />
+            <button class="btn btn-primary">Filtrar</button>
+        </form>
+
+        <!-- 📋 TABLA DE PRODUCTOS -->
+        <form asp-action="EnviarPedidos" asp-controller="Dashboard" method="post">
+            <table class="table table-striped table-hover text-center align-middle">
+                <thead class="table-warning">
                     <tr>
-                        <td colspan="5" class="text-center text-muted">
-                            No hay productos que coincidan con el filtro.
-                        </td>
+                        <th>Seleccionar</th>
+                        <th>Producto</th>
+                        <th>Descripción</th>
+                        <th>Stock actual (Admin)</th>
+                        <th>Cantidad a pedir</th>
                     </tr>
-                }
-                else
-                {
-                    @for (int i = 0; i < Model.Count; i++)
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
                     {
-                        <tr class="@(Model[i].Cantidad < 10 ? "table-danger" : "")">
-                            <td>
-                                <input type="hidden" name="pedidos[@i].IdProducto" value="@Model[i].IdProducto" />
-                                <input type="hidden" name="pedidos[@i].Seleccionado" value="false" />
-
-                                <input type="checkbox"
-                                       onclick="this.previousElementSibling.value = this.checked ? 'true' : 'false';" />
-                            </td>
-
-                            <td>@Model[i].NombreProducto</td>
-                            <td>@Model[i].Descripcion</td>
-                            <td>@Model[i].Cantidad</td>
-
-                            <td style="width:150px;">
-                                <input type="hidden" name="pedidos[@i].IdProducto" value="@Model[i].IdProducto" />
-                                <input type="number" name="pedidos[@i].CantidadSolicitada"
-                                       class="form-control text-center"
-                                       min="0" value="0" />
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">
+                                No hay productos que coincidan con el filtro.
                             </td>
                         </tr>
                     }
-                }
-            </tbody>
-        </table>
+                    else
+                    {
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            <tr class="@(Model[i].Cantidad < 10 ? "table-danger" : "")">
+                                <td>
+                                    <input type="hidden" name="pedidos[@i].IdProducto" value="@Model[i].IdProducto" />
+                                    <input type="hidden" name="pedidos[@i].Seleccionado" value="false" />
 
-        <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        document.querySelectorAll('input[name$="CantidadSolicitada"]').forEach((input) => {
+                                    <input type="checkbox"
+                                           onclick="this.previousElementSibling.value = this.checked ? 'true' : 'false';" />
+                                </td>
 
-            input.addEventListener("input", function () {
+                                <td>@Model[i].NombreProducto</td>
+                                <td>@Model[i].Descripcion</td>
+                                <td>@Model[i].Cantidad</td>
 
-                const row = this.closest("tr");
+                                <td style="width:150px;">
+                                    <input type="hidden" name="pedidos[@i].IdProducto" value="@Model[i].IdProducto" />
+                                    <input type="number" name="pedidos[@i].CantidadSolicitada"
+                                           class="form-control text-center"
+                                           min="0" value="0" />
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
 
-                // checkbox DE ESTA fila
-                const checkbox = row.querySelector('input[type="checkbox"]');
+            <script>
+                document.addEventListener("DOMContentLoaded", function () {
+                    document.querySelectorAll('input[name$="CantidadSolicitada"]').forEach((input) => {
 
-                // hidden Seleccionado DE ESTA fila
-                const hiddenSeleccionado = row.querySelector('input[type="hidden"][name$="Seleccionado"]');
+                        input.addEventListener("input", function () {
 
-                const valor = parseInt(this.value) || 0;
+                            const row = this.closest("tr");
 
-                if (valor > 0) {
-                    checkbox.checked = true;
-                    hiddenSeleccionado.value = "true";
-                } else {
-                    checkbox.checked = false;
-                    hiddenSeleccionado.value = "false";
-                }
-            });
+                            // checkbox DE ESTA fila
+                            const checkbox = row.querySelector('input[type="checkbox"]');
 
-        });
-    });
-</script>
+                            // hidden Seleccionado DE ESTA fila
+                            const hiddenSeleccionado = row.querySelector('input[type="hidden"][name$="Seleccionado"]');
 
-        @if (Model.Count > 0)
-        {
-            <div class="text-center mt-3">
-                <button type="submit" class="btn btn-success btn-lg">
-                    📤 Enviar pedidos seleccionados
-                </button>
-</div>
-        }
-    </form>
+                            const valor = parseInt(this.value) || 0;
+
+                            if (valor > 0) {
+                                checkbox.checked = true;
+                                hiddenSeleccionado.value = "true";
+                            } else {
+                                checkbox.checked = false;
+                                hiddenSeleccionado.value = "false";
+                            }
+                        });
+
+                    });
+                });
+            </script>
+
+            @if (Model.Count > 0)
+            {
+                <div class="text-center mt-3">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        📤 Enviar pedidos seleccionados
+                    </button>
+                </div>
+            }
+        </form>
     </div>
-    
+
 
 </div>
 
