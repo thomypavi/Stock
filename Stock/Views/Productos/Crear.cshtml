@@ -1,75 +1,30 @@
 ﻿@model Stock.Models.Producto
 
-@{
-    
-    ViewData["Title"] = "Agregar Producto";
-}
+<div class="container mt-4" style="max-width:500px;">
+    <div class="card shadow p-4">
+        <h3 class="mb-3">Agregar producto</h3>
 
-<div class="card p-4 mx-auto" style="max-width: 500px;">
-    <h2 class="card-title text-center mb-4">
-        + Agregar Producto
-    </h2>
+        <form asp-action="Crear" asp-controller="Productos" method="post" autocomplete="off">
+            <input type="hidden" asp-for="IdProveedor" value="@ViewBag.IdProveedor" />
 
-    
-    <form asp-action="Crear" asp-controller="Productos" method="post" autocomplete="off">
+            <div class="mb-3">
+                <label asp-for="Nombre" class="form-label">Nombre</label>
+                <input asp-for="Nombre" class="form-control" required />
+            </div>
 
-        
-        <input type="hidden" asp-for="IdProveedor" />
+            <div class="mb-3">
+                <label asp-for="Descripcion" class="form-label">Descripción</label>
+                <textarea asp-for="Descripcion" class="form-control"></textarea>
+            </div>
 
-        
+            <div class="mb-3">
+                <label asp-for="Precio" class="form-label">Precio</label>
+                <input asp-for="Precio" type="number" step="0.01" class="form-control" required />
+            </div>
 
-        
-        <div class="mb-3">
-            <label asp-for="Nombre" class="form-label">Nombre del Producto</label>
-            <input asp-for="Nombre" type="text" class="form-control" required />
-            <span asp-validation-for="Nombre" class="text-danger"></span>
-        </div>
 
-        
-        <div class="mb-3">
-            <label asp-for="Descripcion" class="form-label">Descripción (Opcional)</label>
-            <textarea asp-for="Descripcion" class="form-control" rows="3"></textarea>
-            <span asp-validation-for="Descripcion" class="text-danger"></span>
-        </div>
 
-        
-        <div class="mb-3">
-            <label asp-for="Precio" class="form-label">Precio</label>
-            <input asp-for="Precio" type="number" step="0.01" class="form-control" required />
-            <span asp-validation-for="Precio" class="text-danger"></span>
-        </div>
-
-        
-
-        
-        <div class="mb-3">
-            <label asp-for="StockActual" class="form-label">Stock Inicial</label>
-            <input asp-for="StockActual" type="number" class="form-control" min="0" required />
-            <span asp-validation-for="StockActual" class="text-danger"></span>
-        </div>
-
-        <hr>
-        <h5 class="mb-3">Configuración de Reposición (Para la alerta)</h5>
-
-        
-        <div class="mb-3">
-            <label asp-for="StockMinimo" class="form-label">Stock Mínimo</label>
-            <input asp-for="StockMinimo" type="number" class="form-control" min="1" required />
-            <small class="form-text text-muted">Se generará una alerta si el stock baja de este número.</small>
-            <span asp-validation-for="StockMinimo" class="text-danger"></span>
-        </div>
-
-        
-        <div class="mb-3">
-            <label asp-for="CantidadReposicion" class="form-label">Cantidad a Reponer</label>
-            <input asp-for="CantidadReposicion" type="number" class="form-control" min="1" required />
-            <small class="form-text text-muted">Cantidad que se solicitará al proveedor cuando haya alerta.</small>
-            <span asp-validation-for="CantidadReposicion" class="text-danger"></span>
-        </div>
-
-        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-            <a asp-action="Index" class="btn btn-secondary">Cancelar y Volver</a>
-            <button type="submit" class="btn btn-primary">Guardar Producto</button>
-        </div>
-    </form>
+            <button type="submit" class="btn btn-primary btn-lg">guardar</button>
+        </form>
+    </div>
 </div>

@@ -4,7 +4,6 @@ using Stock.Models;
 
 namespace Stock.Controllers
 {
-    
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -19,14 +18,6 @@ namespace Stock.Controllers
             return View();
         }
 
-        
-        public IActionResult AccessDenied()
-        {
-            
-            ViewData["Title"] = "Acceso Denegado";
-            return View();
-        }
-
         public IActionResult Privacy()
         {
             return View();
@@ -38,5 +29,4 @@ namespace Stock.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
     }
-    
 }

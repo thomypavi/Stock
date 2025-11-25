@@ -8,11 +8,8 @@ namespace Stock.Models
             : base(options)
         {
         }
+
+        // Cada DbSet equivale a una tabla
         public DbSet<Usuario> Usuarios { get; set; }
-
-        public DbSet<Producto> Productos { get; set; }
-        public DbSet<Proveedor> Proveedores { get; set; }
-        public DbSet<OrdenDeCompra> Ordenes { get; set; }
-
     }
 }
